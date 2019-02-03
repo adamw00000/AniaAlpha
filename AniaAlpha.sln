@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.168
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AniaAlpha", "AniaAlpha\AniaAlpha.csproj", "{639E40F8-D710-41F5-B258-C26296D3EF00}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{639E40F8-D710-41F5-B258-C26296D3EF00}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{639E40F8-D710-41F5-B258-C26296D3EF00}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{639E40F8-D710-41F5-B258-C26296D3EF00}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{639E40F8-D710-41F5-B258-C26296D3EF00}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {00C6CAB4-0304-4953-9610-61130725E8EA}
+	EndGlobalSection
+EndGlobal
