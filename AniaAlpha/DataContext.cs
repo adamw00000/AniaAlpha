@@ -10,6 +10,7 @@ namespace AniaAlpha
     public class DataContext: DbContext
     {
         public DbSet<MALAccount> MALAccounts { get; set; }
+        public DbSet<AnimeAlias> Aliases { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

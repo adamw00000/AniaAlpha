@@ -178,12 +178,4 @@ namespace AniaAlpha.Modules
             await _client.StopAsync();
         }
     }
-
-    class NumberCriterion : ICriterion<SocketMessage>
-    {
-        public Task<bool> JudgeAsync(SocketCommandContext sourceContext, SocketMessage parameter)
-        {
-            return Task.FromResult(int.TryParse(parameter.Content, out int n));
-        }
-    }
 }

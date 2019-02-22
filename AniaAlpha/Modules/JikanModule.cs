@@ -27,7 +27,7 @@ namespace AniaAlpha.Modules
         [Command("register", RunMode = RunMode.Async)]
         public async Task Register(string username)
         {
-            var oldAccount = await _context.MALAccounts.FirstOrDefaultAsync(mal => mal.UserId == Context.User.Id && mal.GuildId == Context.Guild.Id);
+            var oldAccount = await GetAccount(Context.User, Context.Guild);
             if (oldAccount != null)
             {
                 await ReplyAsync($"You have already registered an account: https://myanimelist.net/profile/{oldAccount.UserName}");
@@ -57,7 +57,7 @@ namespace AniaAlpha.Modules
         [Command("unregister", RunMode = RunMode.Async)]
         public async Task Unregister()
         {
-            var account = await _context.MALAccounts.FirstOrDefaultAsync(mal => mal.UserId == Context.User.Id && mal.GuildId == Context.Guild.Id);
+            var account = await GetAccount(Context.User, Context.Guild);
             if (account == null)
             {
                 await ReplyAsync("You haven't registered an account yet!");
@@ -84,23 +84,29 @@ namespace AniaAlpha.Modules
 
             await ReplyAsync($"You have successfully unregistered your account.");
         }
-    }
 
-    class YesNoCriterion : ICriterion<SocketMessage>
-    {
-        public Task<bool> JudgeAsync(SocketCommandContext sourceContext, SocketMessage parameter)
+        private async Task<MALAccount> GetAccount(SocketUser user, SocketGuild guild)
         {
-            bool result = false;
+            return await _context.MALAccounts.FirstOrDefaultAsync(mal => mal.UserId == user.Id && mal.GuildId == guild.Id);
+        }
 
-            string[] acceptedValues = { "y", "yes", "n", "no" };
-            var content = parameter.Content.ToLower();
-            
-            if (acceptedValues.Contains(content))
+        [Command("get", RunMode = RunMode.Async)]
+        public async Task Get()
+        {
+            await Get(Context.User);
+        }
+
+        [Command("get", RunMode = RunMode.Async)]
+        public async Task Get(SocketUser user)
+        {
+            var account = await GetAccount(Context.User, Context.Guild);
+            if (account == null)
             {
-                result = true;
+                await ReplyAsync("You haven't registered an account yet!");
+                return;
             }
 
-            return Task.FromResult(result);
+            await ReplyAsync($"https://myanimelist.net/profile/{account.UserName}");
         }
     }
 }
