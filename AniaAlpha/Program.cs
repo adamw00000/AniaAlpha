@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Victoria;
 using Discord.Addons.Interactive;
+using JikanDotNet;
 
 namespace AniaAlpha
 {
@@ -38,6 +39,8 @@ namespace AniaAlpha
             
             services = new ServiceCollection()
                 .AddSingleton(new InteractiveService(client))
+                .AddSingleton<DataContext>()
+                .AddSingleton<IJikan, Jikan>()
                 .AddSingleton(client)
                 .AddSingleton(lavalink)
                 .BuildServiceProvider();

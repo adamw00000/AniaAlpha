@@ -7,7 +7,7 @@ using System.Text;
 
 namespace AniaAlpha
 {
-    class DataContext: DbContext
+    public class DataContext: DbContext
     {
         public DbSet<MALAccount> MALAccounts { get; set; }
 

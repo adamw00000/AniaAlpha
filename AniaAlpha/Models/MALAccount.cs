@@ -6,7 +6,7 @@ using System.Text;
 
 namespace AniaAlpha.Models
 {
-    class MALAccount
+    public class MALAccount
     {
         [Required]
         public int Id { get; set; }
