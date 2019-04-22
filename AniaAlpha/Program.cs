@@ -38,11 +38,11 @@ namespace AniaAlpha
             lavalink.Log += Lavalink_Log;
             
             services = new ServiceCollection()
-                .AddSingleton(new InteractiveService(client))
+                .AddSingleton<InteractiveService>(new InteractiveService(client))
                 .AddSingleton<DataContext>()
                 .AddSingleton<IJikan, Jikan>()
-                .AddSingleton(client)
-                .AddSingleton(lavalink)
+                .AddSingleton<DiscordSocketClient>(client)
+                .AddSingleton<Lavalink>(lavalink)
                 .BuildServiceProvider();
 
             await InstallCommands();

@@ -262,3 +262,4 @@ __pycache__/
 
 # Lavalink logs
 Lavalink/logs/*
+/AniaAlpha/Lavalink/logs
