@@ -24,7 +24,8 @@ namespace AniaAlpha.Modules
             var doc = await web.LoadFromWebAsync(url);
 
             var currentShows = doc.DocumentNode
-                .SelectNodes("//*[contains(@class, 'ind-show')]/a")
+                .SelectNodes("//*[contains(@class, 'ind-show')]" +
+                    "/a")
                 .Select(node => new HsAnime
                 {
                     Title = node.Attributes["title"].Value,
@@ -57,7 +58,8 @@ namespace AniaAlpha.Modules
             var doc = await web.LoadFromWebAsync(url);
 
             var trackedShowList = doc.DocumentNode
-                .SelectNodes("//*[contains(@class, 'ind-show')]/a")
+                .SelectNodes("//*[contains(@class, 'ind-show')]" +
+                    "/a")
                 .Select(node => new HsAnime
                 {
                     Title = node.Attributes["title"].Value,
@@ -82,7 +84,8 @@ namespace AniaAlpha.Modules
             var doc = await web.LoadFromWebAsync(url);
 
             var trackedShowList = doc.DocumentNode
-                .SelectNodes("//*[contains(@class, 'ind-show')]/a")
+                .SelectNodes("//*[contains(@class, 'ind-show')]" +
+                    "/a")
                 .Select(node => new HsAnime
                 {
                     Title = node.Attributes["title"].Value,
@@ -96,7 +99,7 @@ namespace AniaAlpha.Modules
             }
             var trackedShow = trackedShowList.First();
 
-            var responseString = await GetNextDl(trackedShow.Url);
+            var responseString = await GetNextDl(trackedShow.Url, name);
             var responseLines = responseString.Split('\n').AsEnumerable();
 
             int i = 0;
@@ -115,18 +118,9 @@ namespace AniaAlpha.Modules
                 i++;
                 responseLines = responseLines.Skip(messageSize);
             }
-
-            //var dlDoc = await web.LoadFromWebAsync(trackedShow.Url);
-            //var nodes = doc.DocumentNode
-            //    .SelectNodes("//*[contains(@class, 'dl-type hs-torrent-link')]/a");
-            //var dlLinks = doc.DocumentNode
-            //    .SelectNodes("//*[contains(@class, 'dl-type hs-torrent-link')]/a")
-            //    .Select(node => node.Attributes["href"].Value);
-
-            //string response = dlLinks.Aggregate("**Download links:**", (prev, next) => prev + $"{next}\n");
         }
 
-        public async Task<string> GetNextDl(string url)
+        public async Task<string> GetNextDl(string url, string animeName)
         {
             await new BrowserFetcher().DownloadAsync(BrowserFetcher.DefaultRevision);
             var browser = await Puppeteer.LaunchAsync(new LaunchOptions
@@ -139,7 +133,7 @@ namespace AniaAlpha.Modules
             int i = 0;
             while (true)
             {
-                var moreButton = await page.XPathAsync($"//*[contains(@class, 'more-button') and @id=\"{i}\"]");
+                var moreButton = await page.XPathAsync($"//*[contains(@class, 'more-button') and @id='{i}']");
                 if (!moreButton.Any())
                     break;
                 await moreButton.FirstOrDefault()?.ClickAsync();
@@ -150,21 +144,45 @@ namespace AniaAlpha.Modules
             matches.ToList()
                 .ForEach(async match => await match.ClickAsync());
 
-            var linkSpans = await page
-                .XPathAsync($"//*[contains(@class, 'rls-link link-720p')]/span[contains(@class, 'dl-type hs-torrent-link')]/a");
+            var episodeDivs = await page
+                .XPathAsync($"//*[contains(@class, 'rls-info-container')]");
 
-            List<string> links = new List<string>();
-            foreach(var span in linkSpans)
+            List<HsLink> links = new List<HsLink>();
+            foreach (var episodeDiv in episodeDivs)
             {
-                string link = await (await span.GetPropertyAsync("href")).JsonValueAsync<string>();
-                links.Add(link);
+                string episodeNumber = await (await episodeDiv.GetPropertyAsync("id")).JsonValueAsync<string>();
+
+                var linkSpans = await page
+                    .XPathAsync($"//*[contains(@class, 'rls-info-container') and @id='{episodeNumber}']" +
+                       $"/*[contains(@class, 'rls-links-container')]" +
+                       $"/*[contains(@class, 'rls-link link-720p')]" +
+                       $"/*[contains(@class, 'dl-type hs-torrent-link')]" +
+                       $"/a");
+
+                var linkSpan = linkSpans.First();
+
+                string link = await (await linkSpan.GetPropertyAsync("href")).JsonValueAsync<string>();
+                links.Add(new HsLink
+                {
+                    AnimeTitle = animeName,
+                    Episode = episodeNumber,
+                    Url = link
+                });
             }
-            return links.Aggregate("", (prev, next) => prev + $"{next}\n");
+
+            return links.Aggregate("", (prev, next) => prev + $"{next.AnimeTitle} {next.Episode} - {next.Url}\n");
         }
 
         public class HsAnime
         {
             public string Title { get; set; }
+            public string Url { get; set; }
+        }
+
+        public class HsLink
+        {
+            public string AnimeTitle { get; set; }
+            public string Episode { get; set; }
             public string Url { get; set; }
         }
     }
