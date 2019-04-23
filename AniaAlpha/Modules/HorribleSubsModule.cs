@@ -99,28 +99,39 @@ namespace AniaAlpha.Modules
             }
             var trackedShow = trackedShowList.First();
 
-            var responseString = await GetNextDl(trackedShow.Url, name);
-            var responseLines = responseString.Split('\n').AsEnumerable();
-
-            int i = 0;
-            const int messageSize = 10;
-            string aggregateBase = "**Download links:**\n";
-            while (true)
+            var linkList = await GetDls(trackedShow.Url, name);
+            if (linkList == null)
             {
-                if (!responseLines.Any())
-                    return;
-
-                string response = responseLines.Take(messageSize)
-                    .Aggregate(aggregateBase, (prev, next) => prev + $"{next}\n");
-                await ReplyAsync(response);
-
-                aggregateBase = "";
-                i++;
-                responseLines = responseLines.Skip(messageSize);
+                await ReplyAsync("No (or incomplete) download links available!");
             }
+
+            //var responseLines = linkList.Split('\n').AsEnumerable();
+
+            const int messageSize = 12;
+            int weight = 0;
+            string nextResponse = "**Download links:**\n";
+            foreach (var link in linkList)
+            {
+                if (weight + link.LinkWeight > messageSize)
+                {
+                    await ReplyAsync(nextResponse);
+                    weight = 0;
+                    nextResponse = "";
+                }
+
+                string responseFragment;
+                if (link.Type == LinkType.Torrent)
+                    responseFragment = $"{link.AnimeTitle} {link.Episode} - {link.Url}\n";
+                else
+                    responseFragment = $"{link.AnimeTitle} {link.Episode} - magnet ```{link.Url}```\n";
+                nextResponse += responseFragment;
+                weight += link.LinkWeight;
+            }
+
+            await ReplyAsync(nextResponse);
         }
 
-        public async Task<string> GetNextDl(string url, string animeName)
+        public async Task<IEnumerable<HsLink>> GetDls(string url, string animeName)
         {
             await new BrowserFetcher().DownloadAsync(BrowserFetcher.DefaultRevision);
             var browser = await Puppeteer.LaunchAsync(new LaunchOptions
@@ -152,6 +163,7 @@ namespace AniaAlpha.Modules
             {
                 string episodeNumber = await (await episodeDiv.GetPropertyAsync("id")).JsonValueAsync<string>();
 
+                LinkType type = LinkType.Torrent;
                 var linkSpans = await page
                     .XPathAsync($"//*[contains(@class, 'rls-info-container') and @id='{episodeNumber}']" +
                        $"/*[contains(@class, 'rls-links-container')]" +
@@ -159,6 +171,20 @@ namespace AniaAlpha.Modules
                        $"/*[contains(@class, 'dl-type hs-torrent-link')]" +
                        $"/a");
 
+                if (!linkSpans.Any())
+                {
+                    type = LinkType.Magnet;
+                    linkSpans = await page
+                        .XPathAsync($"//*[contains(@class, 'rls-info-container') and @id='{episodeNumber}']" +
+                           $"/*[contains(@class, 'rls-links-container')]" +
+                           $"/*[contains(@class, 'rls-link link-720p')]" +
+                           $"/*[contains(@class, 'dl-type hs-magnet-link')]" +
+                           $"/a");
+                    if (!linkSpans.Any())
+                    {
+                        return null;
+                    }
+                }
                 var linkSpan = linkSpans.First();
 
                 string link = await (await linkSpan.GetPropertyAsync("href")).JsonValueAsync<string>();
@@ -166,11 +192,12 @@ namespace AniaAlpha.Modules
                 {
                     AnimeTitle = animeName,
                     Episode = episodeNumber,
-                    Url = link
+                    Url = link,
+                    Type = type
                 });
             }
 
-            return links.Aggregate("", (prev, next) => prev + $"{next.AnimeTitle} {next.Episode} - {next.Url}\n");
+            return links;//.Aggregate("", (prev, next) => prev + $"{next.AnimeTitle} {next.Episode} - {next.Url}\n");
         }
 
         public class HsAnime
@@ -184,6 +211,9 @@ namespace AniaAlpha.Modules
             public string AnimeTitle { get; set; }
             public string Episode { get; set; }
             public string Url { get; set; }
+            public LinkType Type { get; set; }
+            public int LinkWeight => Type == LinkType.Torrent ? 1 : 4;
         }
+        public enum LinkType { Torrent, Magnet };
     }
 }
